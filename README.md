@@ -3,6 +3,14 @@
 A small Google Docs-style assignment project with accounts, document editing,
 file import, and owner-managed sharing.
 
+## Submission files
+
+- [Submission contents](./SUBMISSION.md)
+- [Architecture note](./ARCHITECTURE.md)
+- [AI workflow note](./AI_WORKFLOW.md)
+- [Walkthrough video URL](./WALKTHROUGH_VIDEO.txt) (replace the pending
+  placeholder after recording)
+
 ## Requirements
 
 - Python 3.11 or newer
@@ -53,35 +61,22 @@ The named volume keeps the SQLite database when the container is replaced.
 `DOCSAPP_COOKIE_SECURE=false` is for local HTTP only; use secure cookies behind
 HTTPS.
 
-## Deploy for reviewer access
+## Live product
 
-The repository includes a Render Blueprint in `render.yaml`. To publish it:
+The currently deployed product is available at:
 
-1. Push this repository to a Git provider supported by Render.
-2. In Render, choose **New → Blueprint**, connect the repository, and apply the
-   blueprint.
-3. Wait for the service health check to pass, then open the generated
-   `onrender.com` URL and register an account.
+[https://ajaia-s-assigment-submession-production.up.railway.app/](https://ajaia-s-assigment-submession-production.up.railway.app/)
 
-The Blueprint uses a Docker web service, an attached persistent disk for the
-SQLite database, and secure session cookies for HTTPS. The persistent disk
-requires a Render plan that supports disks. A public URL is created by Render
-when the Blueprint is applied; it cannot be created from this local workspace
-without access to the hosting account and a remote repository.
+![Deployed product login and registration screen](./screenshots/login-screen.png)
 
-## Architecture
+The deployment uses the repository's Dockerfile. For durable SQLite data, the
+Railway service should mount a persistent volume at `/var/data` and set
+`DOCSAPP_DATABASE_PATH=/var/data/docsapp.db`. Set
+`DOCSAPP_COOKIE_SECURE=true` when serving over HTTPS, and configure the service
+health check to use `/health`. Keep the SQLite-backed service to one replica.
 
-- FastAPI serves the editor and JSON endpoints; async SQLAlchemy with SQLite
-  stores users, sessions, documents, and share permissions.
-- The browser editor stores rich-text structure as HTML in each document. The
-  editor sanitizes loaded content to keep supported formatting tags while
-  removing unsupported markup.
-- Owners can grant read or write access to another registered account. Access
-  is checked by the API on every document request, rather than relying on the
-  UI alone.
-- For this assignment, the priorities are straightforward persistence,
-  demonstrable sharing behavior, and a small deployment footprint. SQLite and
-  a single app instance keep setup simple; this is not intended as a
-  multi-instance production service.
+An optional Render Blueprint is also included in `render.yaml`.
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the architecture summary.
 
 This is an educational mockup, not a production identity or document service.
