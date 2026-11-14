@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Documents</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Arial, sans-serif;
+        color: #202124;
+        background: #f8f9fa;
+      }
+
+      * { box-sizing: border-box; }
+
+      body { margin: 0; min-height: 100vh; }
+
+      header {
+        align-items: center;
+        background: #fff;
+        border-bottom: 1px solid #dadce0;
+        display: flex;
+        gap: 16px;
+        min-height: 64px;
+        padding: 12px 24px;
+      }
+
+      header h1 { font-size: 20px; font-weight: 500; margin: 0; }
+      button { cursor: pointer; }
+      button:disabled { cursor: default; opacity: .55; }
+      .account-controls { align-items: center; display: flex; gap: 12px; margin-left: auto; }
+      .account-controls button, .auth-panel button, #share-form button {
+        background: #1a73e8;
+        border: 0;
+        border-radius: 6px;
+        color: #fff;
+        padding: 10px 16px;
+      }
+      .auth-panel {
+        background: #fff;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        margin: 48px auto;
+        max-width: 460px;
+        padding: 28px;
+      }
+      .auth-panel h2 { font-size: 18px; margin: 0 0 16px; }
+      .auth-panel form { display: grid; gap: 10px; margin-bottom: 24px; }
+      .auth-panel label, #share-form label { display: grid; font-size: 14px; gap: 5px; }
+      .auth-panel input, #share-form input, #share-form select {
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        font: inherit;
+        padding: 10px;
+      }
+      #auth-status, #share-status { color: #5f6368; min-height: 20px; }
+
+      .layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 65px); }
+      aside { background: #fff; border-right: 1px solid #dadce0; padding: 20px 14px; }
+      aside h2 { font-size: 14px; margin: 0 0 14px; }
+      #new-document, #import-document, #save-document { border: 0; border-radius: 6px; padding: 10px 16px; }
+      #new-document, #import-document { background: #e8f0fe; color: #174ea6; margin-bottom: 10px; }
+      #save-document { background: #1a73e8; color: #fff; }
+      #save-document:disabled { cursor: default; opacity: .55; }
+      #import-file { display: none; }
+      #document-list { display: grid; gap: 4px; }
+      .document-link {
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        overflow: hidden;
+        padding: 10px;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .document-link:hover, .document-link[aria-current="page"] { background: #f1f3f4; }
+      #sharing-panel { border-top: 1px solid #dadce0; margin-top: 20px; padding-top: 18px; }
+      #sharing-panel h2 { margin-bottom: 12px; }
+      #share-form { display: grid; gap: 10px; }
+      #share-list { display: grid; gap: 8px; list-style: none; margin: 14px 0 0; padding: 0; }
+      .share-entry { align-items: center; display: flex; font-size: 13px; gap: 8px; justify-content: space-between; }
+      .share-entry button { background: transparent; border: 0; color: #b3261e; padding: 4px; }
+
+      main { margin: 32px auto; max-width: 850px; padding: 0 24px; width: 100%; }
+      .toolbar { align-items: center; display: flex; gap: 16px; margin-bottom: 16px; }
+      .formatting-toolbar {
+        align-items: center;
+        background: #fff;
+        border: 1px solid #dadce0;
+        border-radius: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 12px;
+        padding: 6px;
+      }
+      .formatting-toolbar button, .formatting-toolbar select {
+        background: #fff;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: #202124;
+        min-height: 34px;
+        min-width: 36px;
+        padding: 6px 9px;
+      }
+      .formatting-toolbar button:hover, .formatting-toolbar select:hover { background: #f1f3f4; }
+      .formatting-toolbar button:focus-visible, .formatting-toolbar select:focus-visible {
+        border-color: #1a73e8;
+        outline: none;
+      }
+      #document-title {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        flex: 1;
+        font: inherit;
+        font-size: 22px;
+        min-width: 0;
+        padding: 8px;
+      }
+      #document-title:focus { border-color: #1a73e8; outline: none; }
+      #save-status { color: #5f6368; font-size: 13px; min-width: 72px; }
+      #toast {
+        background: #202124;
+        border-radius: 6px;
+        bottom: 24px;
+        box-shadow: 0 2px 8px #0003;
+        color: #fff;
+        left: 50%;
+        max-width: calc(100vw - 32px);
+        padding: 12px 18px;
+        position: fixed;
+        transform: translateX(-50%);
+        z-index: 10;
+      }
+      #toast[data-kind="error"] { background: #b3261e; }
+      #document-content {
+        background: #fff;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px #20212418;
+        font: 16px/1.6 Arial, sans-serif;
+        min-height: 65vh;
+        padding: 48px;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+        outline: none;
+        width: 100%;
+      }
+      #document-content:focus { border-color: #1a73e8; outline: none; }
+      #document-content h1 { font-size: 2em; }
+      #document-content h2 { font-size: 1.5em; }
+      #document-content ul, #document-content ol { padding-left: 32px; }
+      #empty-state { color: #5f6368; padding: 24px 8px; }
+      [hidden] { display: none !important; }
+
+      @media (max-width: 650px) {
+        .layout { grid-template-columns: 1fr; }
+        aside { border-bottom: 1px solid #dadce0; border-right: 0; }
+        #document-list { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+        main { margin-top: 20px; padding: 0 14px; }
+        #document-content { min-height: 55vh; padding: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>My documents</h1>
+      <div id="account-controls" class="account-controls" hidden>
+        <span id="account-email"></span>
+        <button id="logout" type="button">Log out</button>
+      </div>
+    </header>
+    <section id="auth-panel" class="auth-panel">
+      <h2>Log in</h2>
+      <form id="login-form">
+        <label>Email
+          <input name="email" type="email" autocomplete="email" required>
+        </label>
+        <label>Password
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Log in</button>
+      </form>
+      <h2>Create account</h2>
+      <form id="register-form">
+        <label>Username
+          <input name="username" minlength="3" maxlength="50" autocomplete="username" required>
+        </label>
+        <label>Email
+          <input name="email" type="email" autocomplete="email" required>
+        </label>
+        <label>Password (at least 8 characters)
+          <input name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+        </label>
+        <button type="submit">Create account</button>
+      </form>
+      <p id="auth-status" role="status" aria-live="polite"></p>
+    </section>
+    <div class="layout" id="workspace" hidden>
+      <aside aria-label="Documents">
+        <button id="new-document" type="button">+ New document</button>
+        <button id="import-document" type="button">Import file</button>
+        <input id="import-file" type="file" accept=".txt,.md,.docx">
+        <h2>Recent documents</h2>
+        <nav id="document-list" aria-label="Saved documents"></nav>
+        <p id="empty-state" hidden>No documents yet. Create one to get started.</p>
+        <section id="sharing-panel" hidden>
+          <h2>Share this document</h2>
+          <form id="share-form">
+            <label>Account email
+              <input id="share-email" name="email" type="email" required>
+            </label>
+            <label>Access
+              <select id="share-permission" name="permission">
+                <option value="read">Can view</option>
+                <option value="write">Can edit</option>
+              </select>
+            </label>
+            <button type="submit">Share</button>
+          </form>
+          <p id="share-status" role="status" aria-live="polite"></p>
+          <ul id="share-list"></ul>
+        </section>
+      </aside>
+      <main>
+        <div class="toolbar">
+          <input id="document-title" aria-label="Document title" maxlength="100" placeholder="Untitled document" disabled>
+          <span id="save-status" role="status" aria-live="polite"></span>
+          <button id="save-document" type="button" disabled>Save</button>
+        </div>
+        <div class="formatting-toolbar" role="toolbar" aria-label="Text formatting">
+          <button type="button" data-command="bold" aria-label="Bold" title="Bold" disabled><strong>B</strong></button>
+          <button type="button" data-command="italic" aria-label="Italic" title="Italic" disabled><em>I</em></button>
+          <button type="button" data-command="underline" aria-label="Underline" title="Underline" disabled><u>U</u></button>
+          <select id="block-format" aria-label="Text style" disabled>
+            <option value="p">Normal text</option>
+            <option value="h1">Heading 1</option>
+            <option value="h2">Heading 2</option>
+          </select>
+          <button type="button" data-command="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list" disabled>• List</button>
+          <button type="button" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered list" disabled>1. List</button>
+        </div>
+        <div id="document-content" role="textbox" aria-label="Document content" aria-multiline="true" contenteditable="false"></div>
+      </main>
+    </div>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <script>
+      const authPanel = document.querySelector("#auth-panel");
+      const workspace = document.querySelector("#workspace");
+      const accountControls = document.querySelector("#account-controls");
+      const accountEmail = document.querySelector("#account-email");
+      const authStatus = document.querySelector("#auth-status");
+      const documentList = document.querySelector("#document-list");
+      const emptyState = document.querySelector("#empty-state");
+      const titleInput = document.querySelector("#document-title");
+      const contentInput = document.querySelector("#document-content");
+      const saveButton = document.querySelector("#save-document");
+      const saveStatus = document.querySelector("#save-status");
+      const formattingToolbar = document.querySelector(".formatting-toolbar");
+      const blockFormat = document.querySelector("#block-format");
+      const importButton = document.querySelector("#import-document");
+      const importInput = document.querySelector("#import-file");
+      const sharingPanel = document.querySelector("#sharing-panel");
+      const shareForm = document.querySelector("#share-form");
+      const shareStatus = document.querySelector("#share-status");
+      const shareList = document.querySelector("#share-list");
+      const toast = document.querySelector("#toast");
+      const AUTOSAVE_DELAY = 900;
+      let activeDocumentId = null;
+      let isDirty = false;
+      let canEdit = false;
+      let savedSelection = null;
+      let autosaveTimer = null;
+      let toastTimer = null;
+      let saveInProgress = false;
+      let editRevision = 0;
+
+      function sanitizeContent(content) {
+        const allowedTags = new Set(["B", "STRONG", "I", "EM", "U", "P", "DIV", "BR", "H1", "H2", "UL", "OL", "LI"]);
+        const parsed = new DOMParser().parseFromString(content, "text/html");
+
+        function copyAllowedNodes(source, destination) {
+          for (const node of source.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE) {
+              destination.append(document.createTextNode(node.textContent || ""));
+            } else if (node instanceof HTMLElement) {
+              if (!allowedTags.has(node.tagName)) {
+                copyAllowedNodes(node, destination);
+                continue;
+              }
+              const cleanNode = document.createElement(node.tagName.toLowerCase());
+              copyAllowedNodes(node, cleanNode);
+              destination.append(cleanNode);
+            }
+          }
+        }
+
+        const cleanContent = document.createElement("div");
+        copyAllowedNodes(parsed.body, cleanContent);
+        return cleanContent.innerHTML;
+      }
+
+      function rememberSelection() {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0 && contentInput.contains(selection.anchorNode)) {
+          savedSelection = selection.getRangeAt(0).cloneRange();
+        }
+      }
+
+      function restoreSelection() {
+        contentInput.focus();
+        const selection = window.getSelection();
+        if (!savedSelection) {
+          const range = document.createRange();
+          range.selectNodeContents(contentInput);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          return;
+        }
+        selection.removeAllRanges();
+        selection.addRange(savedSelection);
+      }
+
+      function applyFormat(command, value = null) {
+        restoreSelection();
+        document.execCommand(command, false, value);
+        rememberSelection();
+        markDocumentDirty();
+      }
+
+      function setEditingEnabled(enabled) {
+        contentInput.contentEditable = String(enabled);
+        formattingToolbar.querySelectorAll("button, select").forEach((control) => {
+          control.disabled = !enabled;
+        });
+      }
+
+      async function request(url, options = {}) {
+        const headers = options.body instanceof FormData
+          ? options.headers
+          : { "Content-Type": "application/json", ...options.headers };
+        const response = await fetch(url, {
+          ...options,
+          headers,
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          const detail = error.detail;
+          const message = typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((issue) => issue.msg).join(" ")
+              : "The request could not be completed.";
+          throw new Error(message);
+        }
+        if (response.status === 204) return null;
+        return response.json();
+      }
+
+      function showToast(message, kind = "success") {
+        window.clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.dataset.kind = kind;
+        toast.hidden = false;
+        toastTimer = window.setTimeout(() => {
+          toast.hidden = true;
+        }, 2800);
+      }
+
+      function setDirty(dirty) {
+        isDirty = dirty;
+        saveButton.disabled = activeDocumentId === null || !dirty || !canEdit || saveInProgress;
+        saveStatus.textContent = dirty ? "Unsaved changes" : "";
+      }
+
+      function markDocumentDirty() {
+        if (!canEdit || activeDocumentId === null) return;
+        editRevision += 1;
+        setDirty(true);
+        window.clearTimeout(autosaveTimer);
+        autosaveTimer = window.setTimeout(() => {
+          saveDocument(true);
+        }, AUTOSAVE_DELAY);
+      }
+
+      function showDocument(document) {
+        window.clearTimeout(autosaveTimer);
+        activeDocumentId = document.id;
+        canEdit = document.access !== "shared" || document.permission === "write";
+        savedSelection = null;
+        titleInput.value = document.title;
+        contentInput.innerHTML = sanitizeContent(document.content);
+        titleInput.disabled = !canEdit;
+        setEditingEnabled(canEdit);
+        setDirty(false);
+        sharingPanel.hidden = document.access !== "owned";
+        shareList.replaceChildren();
+        shareStatus.textContent = "";
+        if (document.access === "owned") {
+          loadShares(document.id).catch((error) => {
+            shareStatus.textContent = error.message;
+          });
+        }
+        refreshDocumentList().catch((error) => {
+          saveStatus.textContent = error.message;
+        });
+      }
+
+      async function refreshDocumentList() {
+        const documents = await request("/api/documents");
+        documentList.replaceChildren();
+        emptyState.hidden = documents.length > 0;
+        for (const item of documents) {
+          const link = document.createElement("button");
+          link.type = "button";
+          link.className = "document-link";
+          link.textContent = item.access === "shared"
+            ? `${item.title} — Shared by ${item.owner_username} (${item.permission})`
+            : `${item.title} — Owned`;
+          if (item.id === activeDocumentId) link.setAttribute("aria-current", "page");
+          link.addEventListener("click", () => openDocument(item.id));
+          documentList.append(link);
+        }
+      }
+
+      async function loadShares(documentId) {
+        const shares = await request(`/api/documents/${documentId}/shares`);
+        shareList.replaceChildren();
+        for (const share of shares) {
+          const item = document.createElement("li");
+          item.className = "share-entry";
+          const label = document.createElement("span");
+          label.textContent = `${share.email} — ${share.permission}`;
+          const revokeButton = document.createElement("button");
+          revokeButton.type = "button";
+          revokeButton.textContent = "Remove";
+          revokeButton.setAttribute("aria-label", `Remove access for ${share.email}`);
+          revokeButton.addEventListener("click", async () => {
+            try {
+              await request(
+                `/api/documents/${documentId}/shares/${share.shared_with_user_id}`,
+                { method: "DELETE" },
+              );
+              await loadShares(documentId);
+              shareStatus.textContent = "Access removed";
+            } catch (error) {
+              shareStatus.textContent = error.message;
+            }
+          });
+          item.append(label, revokeButton);
+          shareList.append(item);
+        }
+      }
+
+      function showSignedIn(user) {
+        authPanel.hidden = true;
+        workspace.hidden = false;
+        accountControls.hidden = false;
+        accountEmail.textContent = user.email;
+        authStatus.textContent = "";
+        refreshDocumentList().catch((error) => {
+          saveStatus.textContent = error.message;
+        });
+      }
+
+      function showSignedOut() {
+        window.clearTimeout(autosaveTimer);
+        authPanel.hidden = false;
+        workspace.hidden = true;
+        accountControls.hidden = true;
+        activeDocumentId = null;
+        isDirty = false;
+        canEdit = false;
+        titleInput.value = "";
+        titleInput.disabled = true;
+        contentInput.replaceChildren();
+        setEditingEnabled(false);
+        saveButton.disabled = true;
+        sharingPanel.hidden = true;
+      }
+
+      async function restoreSession() {
+        try {
+          showSignedIn(await request("/api/auth/me"));
+        } catch (error) {
+          showSignedOut();
+          if (error.message !== "Please log in to continue") {
+            authStatus.textContent = error.message;
+          }
+        }
+      }
+
+      async function submitAuthForm(form, endpoint) {
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        authStatus.textContent = "";
+        try {
+          const user = await request(endpoint, {
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+          form.reset();
+          showSignedIn(user);
+        } catch (error) {
+          authStatus.textContent = error.message;
+        }
+      }
+
+      document.querySelector("#login-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitAuthForm(event.currentTarget, "/api/auth/login");
+      });
+      document.querySelector("#register-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitAuthForm(event.currentTarget, "/api/auth/register");
+      });
+      document.querySelector("#logout").addEventListener("click", async () => {
+        try {
+          await request("/api/auth/logout", { method: "POST" });
+          showSignedOut();
+        } catch (error) {
+          authStatus.textContent = error.message;
+        }
+      });
+
+      async function openDocument(id) {
+        try {
+          if (isDirty && !window.confirm("Discard your unsaved changes and open another document?")) return;
+          showDocument(await request(`/api/documents/${id}`));
+          saveStatus.textContent = "Document opened";
+        } catch (error) {
+          saveStatus.textContent = error.message;
+        }
+      }
+
+      document.querySelector("#new-document").addEventListener("click", async () => {
+        try {
+          if (isDirty && !window.confirm("Discard your unsaved changes and create a new document?")) return;
+          const document = await request("/api/documents", {
+            method: "POST",
+            body: JSON.stringify({ title: "Untitled document", content: "" }),
+          });
+          showDocument(document);
+          titleInput.focus();
+          saveStatus.textContent = "New document";
+        } catch (error) {
+          saveStatus.textContent = error.message;
+        }
+      });
+
+      importButton.addEventListener("click", () => {
+        if (isDirty && !window.confirm("Discard your unsaved changes and import a file?")) return;
+        importInput.click();
+      });
+
+      importInput.addEventListener("change", async () => {
+        const file = importInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        importButton.disabled = true;
+        saveStatus.textContent = "Importing...";
+        try {
+          const importedDocument = await request("/api/documents/import", {
+            method: "POST",
+            body: formData,
+          });
+          showDocument(importedDocument);
+          saveStatus.textContent = "Imported";
+        } catch (error) {
+          saveStatus.textContent = error.message;
+        } finally {
+          importButton.disabled = false;
+          importInput.value = "";
+        }
+      });
+
+      shareForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (activeDocumentId === null) return;
+        const formData = new FormData(shareForm);
+        const email = formData.get("email");
+        const permission = formData.get("permission");
+        try {
+          await request(`/api/documents/${activeDocumentId}/shares`, {
+            method: "POST",
+            body: JSON.stringify({ email, permission }),
+          });
+          shareForm.reset();
+          await loadShares(activeDocumentId);
+          shareStatus.textContent = "Document shared";
+        } catch (error) {
+          shareStatus.textContent = error.message;
+        }
+      });
+
+      async function saveDocument(automatic) {
+        if (activeDocumentId === null || !canEdit || !isDirty) return;
+        if (saveInProgress) {
+          window.clearTimeout(autosaveTimer);
+          autosaveTimer = window.setTimeout(() => {
+            saveDocument(automatic);
+          }, AUTOSAVE_DELAY);
+          return;
+        }
+
+        window.clearTimeout(autosaveTimer);
+        const documentId = activeDocumentId;
+        const revision = editRevision;
+        const documentContent = contentInput.innerHTML;
+        const documentTitle = titleInput.value;
+        saveInProgress = true;
+        saveButton.disabled = true;
+        saveStatus.textContent = "Saving...";
+        try {
+          await request(`/api/documents/${documentId}`, {
+            method: "PUT",
+            body: JSON.stringify({ title: documentTitle, content: documentContent }),
+          });
+          if (activeDocumentId === documentId) {
+            if (editRevision === revision) {
+              isDirty = false;
+              saveStatus.textContent = "Saved";
+              saveButton.disabled = true;
+              refreshDocumentList().catch((error) => {
+                showToast(error.message, "error");
+              });
+              showToast(automatic ? "Changes saved automatically" : "Document saved");
+            } else {
+              setDirty(true);
+              saveStatus.textContent = "New changes pending";
+              window.clearTimeout(autosaveTimer);
+              autosaveTimer = window.setTimeout(() => {
+                saveDocument(true);
+              }, AUTOSAVE_DELAY);
+            }
+          }
+        } catch (error) {
+          if (activeDocumentId === documentId) {
+            saveStatus.textContent = "Save failed";
+            setDirty(true);
+            showToast(`Could not save: ${error.message}`, "error");
+          }
+        } finally {
+          saveInProgress = false;
+          if (activeDocumentId !== null) {
+            saveButton.disabled = !canEdit || !isDirty;
+          }
+        }
+      }
+
+      saveButton.addEventListener("click", () => saveDocument(false));
+      titleInput.addEventListener("input", markDocumentDirty);
+      contentInput.addEventListener("input", markDocumentDirty);
+      contentInput.addEventListener("keyup", rememberSelection);
+      contentInput.addEventListener("mouseup", rememberSelection);
+      contentInput.addEventListener("input", rememberSelection);
+
+      formattingToolbar.addEventListener("mousedown", (event) => {
+        if (event.target instanceof Element && event.target.closest("button[data-command]")) {
+          rememberSelection();
+          event.preventDefault();
+        }
+      });
+      formattingToolbar.querySelectorAll("button[data-command]").forEach((button) => {
+        button.addEventListener("click", () => applyFormat(button.dataset.command));
+      });
+      blockFormat.addEventListener("mousedown", rememberSelection);
+      blockFormat.addEventListener("change", () => {
+        applyFormat("formatBlock", blockFormat.value);
+        blockFormat.value = "p";
+      });
+
+      restoreSession();
+    </script>
+  </body>
+</html>

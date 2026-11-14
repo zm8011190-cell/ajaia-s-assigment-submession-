@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: documents-mockup
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: documents-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DOCSAPP_DATABASE_PATH
+        value: /var/data/docsapp.db
+      - key: DOCSAPP_COOKIE_SECURE
+        value: "true"
