@@ -8,8 +8,7 @@ file import, and owner-managed sharing.
 - [Submission contents](./SUBMISSION.md)
 - [Architecture note](./ARCHITECTURE.md)
 - [AI workflow note](./AI_WORKFLOW.md)
-- [Walkthrough video URL](./WALKTHROUGH_VIDEO.txt) (replace the pending
-  placeholder after recording)
+- [Walkthrough video URL](./WALKTHROUGH_VIDEO.txt) 
 
 ## Requirements
 
